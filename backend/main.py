@@ -72,7 +72,7 @@ def process_video(req: ProcessRequest):
         for i, clip in enumerate(highlights):
             output_filename = f"clip_{i + 1}.mp4"
             output_path = os.path.join(job_dir, output_filename)
-            cut_and_reformat_clip(source_path, clip["start"], clip["end"], output_path)
+            cut_and_reformat_clip(source_path, clip["start"], clip["end"], output_path, segments=segments)
 
             clips_result.append({
                 "title": clip.get("title", f"Klip {i + 1}"),
