@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Short Clipper — Ubah podcast jadi klip pendek</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Short Clipper</h1>
+      <p class="subtitle">Tempel link YouTube podcast kamu, AI akan mencari momen menarik dan memotongnya jadi klip pendek siap unggah.</p>
+    </header>
+
+    <form id="process-form">
+      <input
+        type="url"
+        id="youtube-url"
+        placeholder="https://www.youtube.com/watch?v=..."
+        required
+      >
+      <button type="submit" id="submit-btn">Proses video</button>
+    </form>
+
+    <div id="status" class="status hidden"></div>
+
+    <section id="results" class="results hidden">
+      <h2 id="results-title"></h2>
+      <div id="clips-grid" class="clips-grid"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
