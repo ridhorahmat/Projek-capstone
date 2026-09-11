@@ -9,16 +9,11 @@ import yt_dlp
 
 
 def download_video(youtube_url: str, job_dir: str) -> str:
-    """
-    Download video dari YouTube ke job_dir (maksimal resolusi 1080p).
-    Mengembalikan path lengkap file video hasil download.
-    """
     os.makedirs(job_dir, exist_ok=True)
 
     output_template = os.path.join(job_dir, "source.%(ext)s")
 
     ydl_opts = {
-        # height<=1080 membatasi kualitas video maksimal 1080p
         "format": "bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/best[ext=mp4][height<=1080]/best[height<=1080]",
         "outtmpl": output_template,
         "merge_output_format": "mp4",

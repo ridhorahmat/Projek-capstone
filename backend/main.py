@@ -12,7 +12,6 @@ karena proses ini bisa memakan waktu beberapa menit per video.
 
 import os
 import uuid
-import shutil
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,7 +31,6 @@ os.makedirs(JOBS_DIR, exist_ok=True)
 
 app = FastAPI(title="Short Clipper API")
 
-# Izinkan frontend (dijalankan dari file/lokal berbeda) untuk akses API ini
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -40,7 +38,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Supaya file hasil klip bisa diakses/didownload langsung lewat URL
 app.mount("/files", StaticFiles(directory=JOBS_DIR), name="files")
 
 
@@ -54,20 +51,16 @@ def process_video(req: ProcessRequest):
     job_dir = os.path.join(JOBS_DIR, job_id)
 
     try:
-        # 1. Download
         source_path, title = download_video(req.youtube_url, job_dir)
 
-        # 2. Transkripsi
         segments = transcribe(source_path, model_name=WHISPER_MODEL)
         if not segments:
             raise HTTPException(status_code=400, detail="Tidak ada suara terdeteksi di video ini.")
 
-        # 3. Cari momen menarik
         highlights = find_highlight_segments(segments)
         if not highlights:
             raise HTTPException(status_code=400, detail="AI tidak menemukan momen menarik di video ini.")
 
-        # 4. Potong & reformat tiap klip
         clips_result = []
         for i, clip in enumerate(highlights):
             output_filename = f"clip_{i + 1}.mp4"
@@ -77,6 +70,9 @@ def process_video(req: ProcessRequest):
             clips_result.append({
                 "title": clip.get("title", f"Klip {i + 1}"),
                 "reason": clip.get("reason", ""),
+                "hook": clip.get("hook", ""),
+                "category": clip.get("category", ""),
+                "virality_score": clip.get("virality_score"),
                 "start": clip["start"],
                 "end": clip["end"],
                 "download_url": f"/files/{job_id}/{output_filename}",
