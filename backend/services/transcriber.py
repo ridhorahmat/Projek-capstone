@@ -1,9 +1,8 @@
 """
-Tahap 2: Transkripsi audio ke teks menggunakan Whisper (OpenAI, open-source, jalan lokal).
+Tahap 2: Transkripsi audio ke teks menggunakan Whisper (jalan lokal, tanpa internet).
 Hasilnya berupa list segmen teks lengkap dengan timestamp mulai & selesai.
 """
 
-import os
 import whisper
 
 _model_cache = {}
@@ -23,7 +22,7 @@ def transcribe(video_path: str, model_name: str = "base") -> list[dict]:
     model = _get_model(model_name)
     result = model.transcribe(video_path, verbose=False)
 
-    segments = [
+    return [
         {
             "start": seg["start"],
             "end": seg["end"],
@@ -31,4 +30,3 @@ def transcribe(video_path: str, model_name: str = "base") -> list[dict]:
         }
         for seg in result["segments"]
     ]
-    return segments

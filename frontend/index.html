@@ -2,35 +2,394 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Short Clipper — Ubah podcast jadi klip pendek</title>
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="Ubah video YouTube panjang menjadi klip pendek dengan subtitle otomatis dan fitur mengikuti wajah."
+  >
+
+  <meta name="theme-color" content="#090d16">
+
+  <title>Short Clipper</title>
+
+  <!-- Font -->
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  >
+
+  <!-- Tampilan aplikasi -->
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
+  <!-- =========================================
+       BACKGROUND DEKORATIF 3D
+       ========================================= -->
+  <div class="scene-3d" aria-hidden="true">
+
+    <!-- Kubus transparan berputar -->
+    <div class="cube-3d">
+      <span class="cube-face face-front"></span>
+      <span class="cube-face face-back"></span>
+      <span class="cube-face face-right"></span>
+      <span class="cube-face face-left"></span>
+      <span class="cube-face face-top"></span>
+      <span class="cube-face face-bottom"></span>
+    </div>
+
+    <!-- Lingkaran melayang -->
+    <div class="ring-3d"></div>
+
+    <!-- Kisi lantai perspektif -->
+    <div class="floor-3d"></div>
+
+  </div>
+
+  <!-- Garis timeline dekoratif -->
+  <div class="timeline-strip" aria-hidden="true"></div>
+
+  <!-- =========================================
+       KONTEN UTAMA
+       ========================================= -->
   <main class="container">
-    <header>
-      <h1>Short Clipper</h1>
-      <p class="subtitle">Tempel link YouTube podcast kamu, AI akan mencari momen menarik dan memotongnya jadi klip pendek siap unggah.</p>
+
+    <!-- Judul aplikasi -->
+    <header class="hero">
+      <p class="eyebrow-mono">short-clipper.local</p>
+
+      <h1>
+        Podcast panjang.<br>
+        Klip yang nempel.
+      </h1>
+
+      <p class="subtitle">
+        Tempel link YouTube, sistem menandai momen berpotensi,
+        lalu kamu pilih sendiri mana yang dipotong.
+      </p>
     </header>
 
-    <form id="process-form">
-      <input
-        type="url"
-        id="youtube-url"
-        placeholder="https://www.youtube.com/watch?v=..."
-        required
-      >
-      <button type="submit" id="submit-btn">Proses video</button>
-    </form>
+    <!-- =========================================
+         LANGKAH 1: ANALISIS VIDEO
+         ========================================= -->
+    <section id="step-analyze" aria-label="Analisis video">
 
-    <div id="status" class="status hidden"></div>
+      <!-- Indikator langkah -->
+      <div class="steps-indicator">
+        <span class="step-dot active">1</span>
+        <span class="step-label active">Analisis</span>
 
-    <section id="results" class="results hidden">
-      <h2 id="results-title"></h2>
-      <div id="clips-grid" class="clips-grid"></div>
+        <span class="step-line"></span>
+
+        <span class="step-dot">2</span>
+        <span class="step-label">Pilih &amp; potong</span>
+      </div>
+
+      <form id="analyze-form">
+
+        <!-- Masukan tautan YouTube -->
+        <div class="toolbar">
+          <div class="input-wrap">
+
+            <span class="input-icon-mono" aria-hidden="true">
+              &#9655;
+            </span>
+
+            <input
+              type="url"
+              id="youtube-url"
+              aria-label="Tautan video YouTube"
+              placeholder="youtube.com/watch?v=..."
+              required
+            >
+
+          </div>
+
+          <button type="submit" id="analyze-btn">
+            Analisis
+          </button>
+        </div>
+
+        <!-- Panel pengaturan -->
+        <div class="options">
+
+          <!-- Jumlah kandidat -->
+          <div class="option-group">
+            <label class="option-label" for="clip-count">
+              Jumlah kandidat
+            </label>
+
+            <div class="range-row">
+              <input
+                type="range"
+                id="clip-count"
+                min="1"
+                max="10"
+                value="5"
+              >
+
+              <span class="range-value" id="clip-count-val">
+                5
+              </span>
+            </div>
+          </div>
+
+          <!-- Durasi klip -->
+          <div class="option-group">
+            <span class="option-label">
+              Durasi klip (detik)
+            </span>
+
+            <div class="range-row">
+              <input
+                type="number"
+                id="min-duration"
+                class="num-input"
+                aria-label="Durasi minimum dalam detik"
+                min="10"
+                max="180"
+                value="20"
+                required
+              >
+
+              <span class="range-sep">sampai</span>
+
+              <input
+                type="number"
+                id="max-duration"
+                class="num-input"
+                aria-label="Durasi maksimum dalam detik"
+                min="10"
+                max="180"
+                value="90"
+                required
+              >
+            </div>
+          </div>
+
+          <!-- Orientasi video -->
+          <div class="option-group">
+            <span class="option-label">Orientasi</span>
+
+            <div
+              class="segmented"
+              data-name="orientation"
+              role="group"
+              aria-label="Orientasi video"
+            >
+              <button
+                type="button"
+                class="seg active"
+                data-value="portrait"
+              >
+                Portrait 9:16
+              </button>
+
+              <button
+                type="button"
+                class="seg"
+                data-value="landscape"
+              >
+                Landscape 16:9
+              </button>
+            </div>
+          </div>
+
+          <!-- Kualitas video -->
+          <div class="option-group">
+            <span class="option-label">Kualitas</span>
+
+            <div
+              class="segmented"
+              data-name="quality"
+              role="group"
+              aria-label="Kualitas video"
+            >
+              <button
+                type="button"
+                class="seg"
+                data-value="720"
+              >
+                720p
+              </button>
+
+              <button
+                type="button"
+                class="seg active"
+                data-value="1080"
+              >
+                1080p
+              </button>
+            </div>
+          </div>
+
+          <!-- Subtitle dan mengikuti wajah -->
+          <div class="option-group toggles">
+
+            <label class="toggle">
+              <input
+                type="checkbox"
+                id="opt-subtitle"
+                checked
+              >
+
+              <span>Subtitle otomatis</span>
+            </label>
+
+            <label class="toggle">
+              <input
+                type="checkbox"
+                id="opt-reframe"
+                checked
+              >
+
+              <span>Ikuti wajah</span>
+            </label>
+
+          </div>
+
+        </div>
+      </form>
     </section>
+
+    <!-- =========================================
+         LANGKAH 2: PILIH KANDIDAT
+         ========================================= -->
+    <section
+      id="step-select"
+      class="hidden"
+      aria-label="Pilih kandidat klip"
+    >
+
+      <!-- Indikator langkah -->
+      <div class="steps-indicator">
+        <span class="step-dot done">1</span>
+        <span class="step-label done">Analisis</span>
+
+        <span class="step-line"></span>
+
+        <span class="step-dot active">2</span>
+        <span class="step-label active">Pilih &amp; potong</span>
+      </div>
+
+      <!-- Judul video dan tombol kembali -->
+      <div class="results-header">
+        <h2 id="candidates-title"></h2>
+
+        <button
+          type="button"
+          id="back-btn"
+          class="link-btn"
+        >
+          Ganti video
+        </button>
+      </div>
+
+      <!-- Kontrol pilihan kandidat -->
+      <div class="select-bar">
+
+        <label class="toggle">
+          <input
+            type="checkbox"
+            id="select-all"
+            checked
+          >
+
+          <span>Pilih semua</span>
+        </label>
+
+        <span
+          class="selected-count"
+          id="selected-count"
+          aria-live="polite"
+        ></span>
+
+      </div>
+
+      <!-- Kartu kandidat diisi oleh app.js -->
+      <div
+        id="candidates-grid"
+        class="candidates-grid"
+      ></div>
+
+      <!-- Ringkasan pengaturan -->
+      <p
+        class="settings-summary"
+        id="settings-summary"
+      ></p>
+
+      <!-- Mulai pemotongan -->
+      <button
+        type="button"
+        id="render-btn"
+        class="primary-btn"
+      >
+        Potong klip terpilih
+      </button>
+
+    </section>
+
+    <!-- =========================================
+         PESAN PROSES DAN KESALAHAN
+         ========================================= -->
+    <div
+      id="status"
+      class="status hidden"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+
+    <!-- =========================================
+         HASIL PEMOTONGAN
+         ========================================= -->
+    <section
+      id="results"
+      class="hidden"
+      aria-label="Hasil klip video"
+    >
+
+      <div class="results-header">
+        <h2>Hasil</h2>
+
+        <button
+          type="button"
+          id="reselect-btn"
+          class="link-btn"
+        >
+          Kembali ke pilihan
+        </button>
+      </div>
+
+      <!-- Video hasil diisi oleh app.js -->
+      <div
+        id="clips-grid"
+        class="clips-grid"
+      ></div>
+
+    </section>
+
   </main>
 
+  <!-- Logika aplikasi dan interaksi panel 3D -->
   <script src="app.js"></script>
+
 </body>
 </html>

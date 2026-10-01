@@ -1,11 +1,15 @@
 """
 Tahap 1: Ambil video dari YouTube dan ekstrak file video + audio.
 Menggunakan yt-dlp untuk download, disimpan sementara di folder jobs/<job_id>/
-Resolusi dibatasi maksimal 1080p supaya proses download & pemotongan lebih cepat.
+Resolusi dibatasi maksimal 1080p. Kalau ada file cookies.txt (hasil export manual
+dari browser), dipakai untuk menghindari deteksi bot YouTube.
 """
 
 import os
 import yt_dlp
+
+BACKEND_DIR = os.path.dirname(os.path.dirname(__file__))
+COOKIES_FILE = os.path.join(BACKEND_DIR, "cookies.txt")
 
 
 def download_video(youtube_url: str, job_dir: str) -> str:
@@ -21,9 +25,25 @@ def download_video(youtube_url: str, job_dir: str) -> str:
         "no_warnings": True,
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(youtube_url, download=True)
-        downloaded_path = os.path.join(job_dir, "source.mp4")
+    # Kalau file cookies.txt ada di folder backend, pakai itu supaya tidak dianggap bot
+    if os.path.exists(COOKIES_FILE):
+        ydl_opts["cookiefile"] = COOKIES_FILE
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(youtube_url, download=True)
+    except yt_dlp.utils.DownloadError as e:
+        hint = (
+            "Tidak ditemukan file cookies.txt di folder backend. "
+            if not os.path.exists(COOKIES_FILE)
+            else "File cookies.txt ada tapi mungkin sudah kedaluwarsa, coba export ulang. "
+        )
+        raise RuntimeError(
+            f"Gagal download video dari YouTube: {e}\n{hint}"
+            f"Lihat panduan export cookies.txt untuk mengatasi ini."
+        )
+
+    downloaded_path = os.path.join(job_dir, "source.mp4")
 
     if not os.path.exists(downloaded_path):
         for f in os.listdir(job_dir):
