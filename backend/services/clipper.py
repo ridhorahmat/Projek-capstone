@@ -3,6 +3,8 @@ Tahap 4 & 5: Potong video sesuai timestamp, reformat sesuai orientasi & kualitas
 yang dipilih user, dengan opsi smart reframe (mengikuti wajah) dan subtitle.
 """
 
+from services.timing import stage
+
 import os
 import subprocess
 
@@ -101,7 +103,8 @@ def _get_video_dimensions(video_path):
         "-of", "csv=s=x:p=0",
         video_path,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    with stage('baca dimensi video'):
+        result = subprocess.run(cmd, capture_output=True, text=True)
     width, height = result.stdout.strip().split("x")
     return int(width), int(height)
 
@@ -124,7 +127,8 @@ def _build_video_filter(source_path, start, end, orientation, quality, smart_ref
 
     crop_x_expr = None
     if smart_reframe:
-        crop_x_expr = get_smart_crop_x_expression(source_path, start, end, crop_w)
+        with stage('deteksi wajah dan hitung crop'):
+            crop_x_expr = get_smart_crop_x_expression(source_path, start, end, crop_w)
 
     if crop_x_expr:
         # Crop mengikuti posisi wajah dominan (x dinamis)
@@ -160,13 +164,15 @@ def cut_and_reformat_clip(
 
     duration = end - start
 
-    vf_parts, _, _ = _build_video_filter(
-        source_path, start, end, orientation, quality, smart_reframe
-    )
+    with stage('persiapan filter (termasuk deteksi wajah)'):
+        vf_parts, _, _ = _build_video_filter(
+            source_path, start, end, orientation, quality, smart_reframe
+        )
 
     if burn_subtitle and segments:
         srt_path = os.path.splitext(output_path)[0] + ".srt"
-        generate_srt_for_clip(segments, start, end, srt_path)
+        with stage('pembuatan subtitle'):
+            generate_srt_for_clip(segments, start, end, srt_path)
 
         escaped_srt = _escape_path_for_ffmpeg(srt_path)
         font_size = SUBTITLE_FONT_SIZE.get(quality, 18)
@@ -191,7 +197,8 @@ def cut_and_reformat_clip(
         output_path,
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    with stage('ekspor FFmpeg'):
+        result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"ffmpeg gagal memproses klip: {result.stderr[-800:]}")
 

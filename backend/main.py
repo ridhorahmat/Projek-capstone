@@ -7,6 +7,8 @@ ALUR DUA TAHAP
 2. POST /api/render   : memotong hanya klip yang dipilih pengguna.
 """
 
+from services.timing import stage, timed_request
+
 import json
 import os
 import uuid
@@ -81,6 +83,7 @@ def _transcript_excerpt(segments: list, start: float, end: float, limit: int = 4
 
 
 @app.post("/api/analyze")
+@timed_request("analisis")
 def analyze_video(req: AnalyzeRequest):
     if req.max_duration <= req.min_duration:
         raise HTTPException(status_code=400, detail="Durasi maksimum harus lebih besar dari durasi minimum.")
@@ -89,28 +92,32 @@ def analyze_video(req: AnalyzeRequest):
     job_dir = _job_dir(job_id)
 
     try:
-        source_path, title = download_video(req.youtube_url, job_dir)
+        with stage('unduh video'):
+            source_path, title = download_video(req.youtube_url, job_dir)
 
-        segments = transcribe(source_path, model_name=WHISPER_MODEL)
+        with stage('transkripsi Whisper'):
+            segments = transcribe(source_path, model_name=WHISPER_MODEL)
         if not segments:
             raise HTTPException(status_code=400, detail="Tidak ada suara terdeteksi pada video ini.")
 
-        candidates = find_highlight_segments(
-            segments,
-            max_clips=req.clip_count,
-            min_seconds=req.min_duration,
-            max_seconds=req.max_duration,
-        )
+        with stage('pemilihan kandidat klip'):
+            candidates = find_highlight_segments(
+                segments,
+                max_clips=req.clip_count,
+                min_seconds=req.min_duration,
+                max_seconds=req.max_duration,
+            )
         if not candidates:
             raise HTTPException(status_code=400, detail="Tidak ditemukan momen yang sesuai pada video ini.")
 
-        _save_job(job_id, {
-            "job_id": job_id,
-            "source_path": source_path,
-            "video_title": title,
-            "segments": segments,
-            "candidates": candidates,
-        })
+        with stage('simpan hasil analisis'):
+            _save_job(job_id, {
+                "job_id": job_id,
+                "source_path": source_path,
+                "video_title": title,
+                "segments": segments,
+                "candidates": candidates,
+            })
 
         return {
             "job_id": job_id,
@@ -139,8 +146,10 @@ def analyze_video(req: AnalyzeRequest):
 
 
 @app.post("/api/render")
+@timed_request("render")
 def render_clips(req: RenderRequest):
-    job = _load_job(req.job_id)
+    with stage('baca hasil analisis'):
+        job = _load_job(req.job_id)
     candidates = job["candidates"]
     segments = job["segments"]
     source_path = job["source_path"]
@@ -162,17 +171,18 @@ def render_clips(req: RenderRequest):
             output_filename = f"clip_{i + 1}.mp4"
             output_path = os.path.join(job_dir, output_filename)
 
-            cut_and_reformat_clip(
-                source_path,
-                clip["start"],
-                clip["end"],
-                output_path,
-                segments=segments,
-                orientation=req.orientation,
-                quality=req.quality,
-                burn_subtitle=req.burn_subtitle,
-                smart_reframe=req.smart_reframe,
-            )
+            with stage(f"render {output_filename}"):
+                cut_and_reformat_clip(
+                    source_path,
+                    clip["start"],
+                    clip["end"],
+                    output_path,
+                    segments=segments,
+                    orientation=req.orientation,
+                    quality=req.quality,
+                    burn_subtitle=req.burn_subtitle,
+                    smart_reframe=req.smart_reframe,
+                )
 
             results.append({
                 "index": i,
